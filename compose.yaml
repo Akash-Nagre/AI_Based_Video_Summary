@@ -1,0 +1,16 @@
+services:
+  video-summarizer:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      WHISPER_MODEL: ${WHISPER_MODEL:-small}
+      HF_HOME: /models
+      MAX_CONCURRENT_JOBS: "1"
+    volumes:
+      - ./data:/app/data
+      - model-cache:/models
+    restart: unless-stopped
+
+volumes:
+  model-cache:

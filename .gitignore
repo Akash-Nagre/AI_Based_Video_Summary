@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Environment variables
+.env
+
+# Node / React
+node_modules/
+dist/
+
+# Video and audio files
+*.mp4
+*.mp3
+*.wav
+
+# Generated data
+data/input/*
+data/output/*
+data/cache/
+!data/input/.gitkeep
+!data/output/.gitkeep
+vectorstore/
+
+# IDE
+.vscode/
+
+# Generated documents
+*.pdf

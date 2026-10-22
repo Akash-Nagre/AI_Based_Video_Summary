@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f4ef">
+  <title>Framewise — Video summaries</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">f.</span><span>framewise</span></a>
+    <span class="top-note"><i class="status-dot"></i> AI VIDEO SUMMARIZER</span>
+  </header>
+
+  <main class="shell">
+    <section class="intro">
+      <div class="eyebrow"><span class="eyebrow-line"></span> LESS WATCHING, MORE KNOWING</div>
+      <h1>The whole story.<br><em>In the highlights.</em></h1>
+      <p class="lead">Turn long videos into a concise, watchable summary. Drop in a video and let the important moments find their way to the top.</p>
+    </section>
+
+    <section class="workspace" aria-label="Create a video summary">
+      <div class="panel upload-panel" id="uploadPanel">
+        <div class="panel-heading"><div><span class="step">01</span><h2>Add a video</h2></div><span class="format-note">MP4 · MOV · AVI · MKV · WEBM</span></div>
+        <label class="dropzone" id="dropzone" for="videoInput">
+          <input id="videoInput" type="file" accept="video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,video/webm,.mp4,.mov,.avi,.mkv,.webm">
+          <span class="upload-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 15.5v3A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <strong id="filePrompt">Drop your video here</strong>
+          <span class="drop-sub">or <span>browse files</span> on your device</span>
+        </label>
+        <div class="file-detail hidden" id="fileDetail"><span class="file-badge">MP4</span><div class="file-info"><strong id="fileName"></strong><small id="fileSize"></small></div><button class="remove-file" id="removeFile" aria-label="Remove video">×</button></div>
+        <div class="controls">
+          <div class="range-label"><label for="summaryLength">Summary length</label><span><b id="rangeValue">25</b><small>% of original</small></span></div>
+          <input id="summaryLength" type="range" min="15" max="40" value="25" step="5">
+          <div class="range-ends"><span>Shorter</span><span>More detail</span></div>
+        </div>
+        <button class="primary-button" id="startButton" disabled><span>Make my summary</span><span class="button-arrow">↗</span></button>
+        <p class="privacy-note"><svg viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="7" rx="1.4" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 7V4.8a2.5 2.5 0 1 1 5 0V7" stroke="currentColor" stroke-width="1.2"/></svg> Your video is uploaded to the server running this app.</p>
+      </div>
+
+      <aside class="side-column">
+        <div class="side-card how-card"><div class="side-kicker">A LITTLE LESS, A LOT MORE</div><div class="how-step"><span>01</span><div><b>We listen</b><p>Speech is transcribed and key moments are identified.</p></div></div><div class="how-step"><span>02</span><div><b>We find the thread</b><p>Topics and visual changes help shape the story.</p></div></div><div class="how-step"><span>03</span><div><b>You get the good parts</b><p>A compact video, ready to watch and share.</p></div></div><div class="side-decoration">F<span>.</span></div></div>
+        <div class="side-card note-card"><span class="note-star">✳</span><div><b>Made for the long ones.</b><p>Lectures, interviews, talks, and everything you meant to watch.</p></div></div>
+      </aside>
+    </section>
+
+    <section class="progress-card hidden" id="progressCard" aria-live="polite">
+      <div class="progress-top"><div><span class="step">02</span><h2 id="progressTitle">Working on your summary</h2></div><span class="progress-percent" id="progressPercent">0%</span></div>
+      <p class="progress-filename" id="progressFilename"></p>
+      <div class="progress-track"><span id="progressBar"></span></div>
+      <div class="progress-status"><span class="pulse"></span><span id="stageText">Preparing your video…</span><span class="wait-note">This can take a few minutes</span></div>
+    </section>
+
+    <section class="result-card hidden" id="resultCard" aria-live="polite">
+      <div class="result-heading"><div><span class="step">03</span><h2>Your summary is ready</h2></div><button class="text-button" id="newVideo">← Summarize another</button></div>
+      <div class="result-grid"><div class="video-wrap"><video id="summaryVideo" controls playsinline></video><a class="download-button" id="downloadLink" href="#" download><span>Download summary</span><span>↓</span></a></div><div class="result-copy"><div class="result-chip"><i class="status-dot"></i> GENERATED HIGHLIGHTS</div><h3 id="resultName">Video summary</h3><p class="result-stats" id="resultStats"></p><div class="highlights-block"><div class="highlights-heading"><span class="mini-label">IMPORTANT MOMENTS IN ORIGINAL</span><span class="list-hint">Select to play</span></div><div class="highlights-list" id="highlightsList"></div></div></div></div>
+      <div class="topics-section" id="topicsSection"><span class="mini-label">TOPIC COVERAGE</span><div class="topics-list" id="topicsList"></div></div>
+    </section>
+
+    <div class="toast hidden" id="toast" role="alert"></div>
+    <footer><span>FRAMEWISE <i>©</i> 2026</span><span>MAKE TIME FOR WHAT MATTERS.</span></footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
