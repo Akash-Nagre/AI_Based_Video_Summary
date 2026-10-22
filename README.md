@@ -6,6 +6,8 @@ Local video summarization with Whisper transcription, semantic text embeddings, 
 
 Requirements: Python 3.11+, FFmpeg and FFprobe on `PATH`, and enough disk space for source video, extracted audio, and generated clips. First transcription and embedding runs may download model weights; core processing does not need an API key. CPU inference is supported but model size and hardware affect processing time. Set `WHISPER_MODEL` to `tiny`, `base`, `small`, `medium`, or `large-v3`; default is `small`. CUDA is attempted automatically, with CPU int8 fallback.
 
+The result page can show all available transcript text from the clips in the generated summary video, in clip order and in the detected source language. It uses the transcript already produced during video processing, so there is no separate text-generation model download. Speech-recognition errors can still affect the text, especially when the source audio is unclear.
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -66,7 +68,7 @@ Candidate clips are built from timestamped transcript chunks. Embeddings are gro
 
 `coverage_report.json` is generated per job and included in `/result/{job_id}`; it can also be fetched from `/coverage/{job_id}`. It records discovered topic labels and evidence text, source and selected timestamps, target and actual summary duration, and topic coverage gaps. Topic labels are representative source excerpts, not human-validated topic names. Current visual features capture visual activity/scene changes; they do not provide general object or action recognition. Silent or untranscribable videos use a clearly marked visual-activity-only path and produce no semantic topics or transcript summary.
 
-Topic coverage is the importance-weighted sum of each topic's selected evidence duration divided by an estimated useful duration, capped at 1 per topic. The estimate is based on the strongest segment and available topic duration. This is a useful allocation diagnostic, not a factual completeness metric. `coverage_status` distinguishes adequate (≥0.75), partial, and omitted topics. The text summary lists source evidence and whether each topic appears in the selected highlights.
+Topic coverage is the importance-weighted sum of each topic's selected evidence duration divided by an estimated useful duration, capped at 1 per topic. The estimate is based on the strongest segment and available topic duration. This is a useful allocation diagnostic, not a factual completeness metric. `coverage_status` distinguishes adequate (≥0.75), partial, and omitted topics. The text view contains speech from the selected highlight clips only, without timestamps.
 
 ## Evaluation
 

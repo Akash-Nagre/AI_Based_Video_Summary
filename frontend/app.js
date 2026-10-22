@@ -4,6 +4,7 @@ const dropzone = $('dropzone');
 const startButton = $('startButton');
 let selectedFile = null;
 let toastTimer;
+let currentJobId = null;
 
 function showToast(message) {
   const toast = $('toast');
@@ -31,6 +32,7 @@ function setFile(file) {
   $('fileDetail').classList.remove('hidden');
   $('filePrompt').textContent = 'Video ready to summarize';
   startButton.disabled = false;
+  $('startHint').textContent = 'Your video is ready. Choose “Make my summary” when you’re ready.';
 }
 
 input.addEventListener('change', () => setFile(input.files[0]));
@@ -40,6 +42,7 @@ $('removeFile').addEventListener('click', () => {
   $('fileDetail').classList.add('hidden');
   $('filePrompt').textContent = 'Drop your video here';
   startButton.disabled = true;
+  $('startHint').textContent = 'Choose a video to enable summary generation.';
 });
 
 for (const eventName of ['dragenter', 'dragover']) {
@@ -106,9 +109,39 @@ function formatTimestamp(seconds) {
     : `${minutes}:${String(remainder).padStart(2, '0')}`;
 }
 
+function renderTextSummary(payload) {
+  const content = $('textSummaryContent');
+  content.replaceChildren();
+  const summaries = Array.isArray(payload.summaries) ? payload.summaries : [];
+  if (!summaries.length) {
+    const empty = document.createElement('p');
+    empty.className = 'text-summary-empty';
+    empty.textContent = 'No text summary was returned for this video.';
+    content.append(empty);
+    return;
+  }
+
+  for (const summary of summaries) {
+    const section = document.createElement('article');
+    section.className = 'text-summary-item';
+    const heading = document.createElement('div');
+    heading.className = 'text-summary-item-heading';
+    const title = document.createElement('span');
+    title.className = 'text-summary-topic';
+    title.textContent = summary.label || summary.language || 'Summary';
+    heading.append(title);
+    const paragraph = document.createElement('p');
+    paragraph.className = 'generated-summary-text';
+    paragraph.textContent = summary.text || '';
+    section.append(heading, paragraph);
+    content.append(section);
+  }
+}
+
 function renderResult(payload, filename, jobId) {
   const result = payload.result || {};
   const report = payload.coverage_report || result.coverage_report || {};
+  currentJobId = jobId;
   $('progressCard').classList.add('hidden');
   $('resultCard').classList.remove('hidden');
   $('resultName').textContent = filename;
@@ -182,6 +215,7 @@ function renderResult(payload, filename, jobId) {
 
 async function runJob(file) {
   startButton.disabled = true;
+  $('startHint').textContent = 'Preparing your summary…';
   const progressTimer = showProgress(file.name);
   try {
     $('stageText').textContent = 'Uploading your video…';
@@ -208,6 +242,9 @@ async function runJob(file) {
     $('uploadPanel').classList.remove('hidden');
     document.querySelector('.side-column').classList.remove('hidden');
     startButton.disabled = !selectedFile;
+    $('startHint').textContent = selectedFile
+      ? 'Your video is ready. You can try generating the summary again.'
+      : 'Choose a video to enable summary generation.';
     showToast(error.message || 'Something went wrong. Please try again.');
   }
 }
@@ -225,5 +262,36 @@ $('newVideo').addEventListener('click', () => {
   $('fileDetail').classList.add('hidden');
   $('filePrompt').textContent = 'Drop your video here';
   startButton.disabled = true;
+  $('startHint').textContent = 'Choose a video to enable summary generation.';
   window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+$('openTextSummary').addEventListener('click', async () => {
+  const dialog = $('textSummaryDialog');
+  const content = $('textSummaryContent');
+  const button = $('openTextSummary');
+  if (!currentJobId) return;
+  dialog.showModal();
+  content.replaceChildren();
+  const loading = document.createElement('p');
+  loading.className = 'text-summary-empty';
+  loading.textContent = 'Collecting the complete transcript of the clips in your generated video.';
+  content.append(loading);
+  button.disabled = true;
+  try {
+    const summary = await request(`/text-summary/${encodeURIComponent(currentJobId)}`, { method: 'POST' });
+    renderTextSummary(summary);
+  } catch (error) {
+    content.replaceChildren();
+    const message = document.createElement('p');
+    message.className = 'text-summary-empty';
+    message.textContent = error.message || 'Could not generate a text summary.';
+    content.append(message);
+  } finally {
+    button.disabled = false;
+  }
+});
+$('closeTextSummary').addEventListener('click', () => $('textSummaryDialog').close());
+$('textSummaryDialog').addEventListener('click', (event) => {
+  if (event.target === $('textSummaryDialog')) $('textSummaryDialog').close();
 });

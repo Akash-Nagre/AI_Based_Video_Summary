@@ -19,6 +19,9 @@ dist/
 # Generated data
 data/input/*
 data/output/*
+data/jobs/*
+data/evaluation_*/
+data/paper_render_*/
 data/cache/
 !data/input/.gitkeep
 !data/output/.gitkeep
@@ -29,3 +32,4 @@ vectorstore/
 
 # Generated documents
 *.pdf
+audit_render/

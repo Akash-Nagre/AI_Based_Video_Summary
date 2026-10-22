@@ -1,6 +1,9 @@
+import asyncio
+import logging
 import shutil
 import os
 import uuid
+import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -9,6 +12,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from modules.pipeline import process_video
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================
@@ -448,6 +453,67 @@ def _read_coverage_report(job):
         return None
     with path.open(encoding="utf-8") as source:
         return json.load(source)
+
+
+@app.post("/text-summary/{job_id}")
+async def generate_text_summary(job_id: str):
+    """Return the complete transcript text of the generated highlights video."""
+    if job_id not in jobs:
+        raise HTTPException(status_code=404, detail="Job not found.")
+
+    job = jobs[job_id]
+    if job["status"] != "completed":
+        raise HTTPException(status_code=409, detail="The video summary is not ready yet.")
+
+    summary_path = Path(job["job_directory"]) / "highlights_text_v4.json"
+    if summary_path.is_file():
+        try:
+            with summary_path.open(encoding="utf-8") as source:
+                return json.load(source)
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    result = job.get("result") or {}
+    transcript = result.get("transcript") or {}
+    selected_segments = result.get("selected_segments") or []
+    transcript_segments = transcript.get("segments") or []
+    if not selected_segments:
+        raise HTTPException(status_code=422, detail="No generated highlight clips are available to summarize.")
+
+    highlight_segments = []
+    for clip in selected_segments:
+        clip_text = str(clip.get("text") or "").strip()
+        if not clip_text:
+            clip_start = float(clip.get("start", 0) or 0)
+            clip_end = float(clip.get("end", clip_start) or clip_start)
+            clip_text = " ".join(
+                str(segment.get("text") or "").strip()
+                for segment in transcript_segments
+                if float(segment.get("end", 0) or 0) > clip_start
+                and float(segment.get("start", 0) or 0) < clip_end
+                and str(segment.get("text") or "").strip()
+            )
+        if clip_text:
+            highlight_segments.append({"text": clip_text})
+    if not highlight_segments:
+        raise HTTPException(status_code=422, detail="No transcript speech was found in the generated highlights.")
+
+    full_text = "\n\n".join(highlight_segments_part["text"] for highlight_segments_part in highlight_segments)
+    language = str(transcript.get("language") or "").strip()
+    summary = {
+        "source_language": language,
+        "summaries": [{
+            "language": language,
+            "label": language.upper() if language else "Video text",
+            "text": full_text,
+        }],
+    }
+
+    temp_path = summary_path.with_suffix(".json.tmp")
+    with temp_path.open("w", encoding="utf-8") as output:
+        json.dump(summary, output, ensure_ascii=False, indent=2)
+    os.replace(temp_path, summary_path)
+    return summary
 
 
 @app.get("/coverage/{job_id}")
